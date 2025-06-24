@@ -1,50 +1,48 @@
 import asyncio
+import io
+from PIL import Image
 from pathlib import Path
 from typing import Optional
 from food_order.runner import get_runner
-from food_order.services.sessions import get_session
+from food_order.services.sessions import get_session, CustomSessionService
 from food_order.services.artifacts import get_artifacts
 from google.genai import types
-from google.adk.runners import Runner
 from food_order.core.config import APP_NAME, SESSION_ID, USER_ID
-from food_order.prompt import workflow_instruction
-
-async def call_agent_async(query: str, runner: Runner, user_id: str, session_id: str):
-    try:
-        final_response_text = "Agent did not produce a final response."
-        content = types.Content(role='user', parts=[types.Part(text=query)])
-
-        async for event in runner.run_async(user_id=user_id, session_id=session_id, new_message=content):
-            if event.is_final_response():
-                if event.content and event.content.parts:
-                    final_response_text = event.content.parts[0].text
-                elif event.actions and event.actions.escalate:
-                    final_response_text = f"Agent escalated: {event.error_message or 'No specific message.'}"
-                break
-            print(f"======Event text:===== {event.content.parts[0].text}")
-        
-        print("Workflow completed with result:", final_response_text)
-        return final_response_text
-    except Exception as e:
-        print(f"Error in call_agent_async: {e}")
-        raise
 
 async def run_conversation(menu_image_path: Path, preference_text: Optional[str] = None):
     try:
         print("\n=== Starting Food Order Workflow ===")
-        print(f"Menu image path: {menu_image_path}")
-        print(f"User preferences: {preference_text}")
         
-        session = get_session(
+        # get session
+        session = await get_session(
             app_name=APP_NAME,
             user_id=USER_ID,
             session_id=SESSION_ID
         )
+
+        # get artifact
         artifact = get_artifacts()
         
+        # get runner
         runner = get_runner(APP_NAME, session, artifact)
-        initial_message = preference_text
-        await call_agent_async(initial_message, runner=runner, user_id=USER_ID, session_id=SESSION_ID)
+
+        # forma initial message
+        img = Image.open(menu_image_path)
+        img_byte_arr = io.BytesIO()
+        img.save(img_byte_arr, format='PNG')
+        image_bytes = img_byte_arr.getvalue()
+        content = types.Content(role='user', parts=[types.Part(text=preference_text), types.Part.from_bytes(data=image_bytes, mime_type='image/png')])
+
+        # run convertation
+        async for event in runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=content):
+            if event.actions and (event.actions.escalate or event.actions.transfer_to_agent):
+                await CustomSessionService.filter_events(session, APP_NAME, USER_ID, SESSION_ID)
+            
+            if event.is_final_response() and event.content and event.content.parts:
+                final_response_text = event.content.parts[0].text
+        
+        print("Workflow completed with result:", final_response_text)
+        return final_response_text
         
     except Exception as e:
         print(f"Error in run_conversation: {str(e)}")

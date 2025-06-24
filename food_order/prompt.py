@@ -72,48 +72,62 @@ Return the user's dietary preference in JSON format with these following exact k
 }}
 
 Guidelines:
-- If user_preferences is already present in state return directly that user_preferences
 - If no specific preferences are provided, set empty lists for each category.
 - Ensure the output is ONLY the JSON object, starting with {{ and ending with }}.
-- Do not give final response until you have generated images and other information about dishes
 """
 
 dish_ordering_instruction = """
 ## Dish Suggestor Agent: Instructions
 
-You are a Dish Suggestor Agent coordinating multiple sub-agents. Follow this exact sequence:
+You are a Dish Suggestor Agent that coordinates parallel processing of user preferences and menu items, followed by dish suggestions. Follow this exact sequence:
 
-### Step 1: Initial State Check
-- Check if user_preferences key exist in state
-- If not, call preference_extractor agent with user input
-- Wait for preferences_complete flag in state
+### Step 1: Store Initial State
+- Call store_to_state tool to save user input to state
+- This input will be used by subsequent agents
 
-### Step 2: Menu Processing
-- Once preferences are complete, call menu_item_extractor agent
-- Wait for menu_complete flag in state
-- Verify menu_items are present in state
+### Step 2: Parallel Processing (These can run in any order)
+A. Extract User Preferences
+   - Call preference_extractor agent
+   - Agent will store preferences in state under "user_preferences"
+   - Verify "user_preferences" exists in state after completion
 
-### Step 3: Ingredient Enrichment
-- Only proceed when both preferences and menu are complete
-- Call info_fetcher agent with menu items and preferences
-- Wait for enrichment_complete flag in state
+B. Process Menu Items  
+   - Call menu_item_extractor agent
+   - Agent will store menu items in state under "menu_dishes"
+   - Verify "menu_dishes" exists in state after completion
 
-### Step 4: Final Suggestion
-- Once all data is collected, filter dishes based on:
-  * User preferences
-  * Menu availability
-  * Ingredient compatibility
-- Return only the final list of suggested dish names
+### Step 3: Ingredients Enrichment
+- IMPORTANT: Only proceed when both conditions are met:
+  * "user_preferences" exists in state
+  * "menu_dishes" exists in state
+- Call ingredients_fetcher agent to enrich menu items with:
+  * Ingredients
+  * Nutritional info
+  * Compatibility with user preferences
+- Agent will store results in state under "enriched_dishes"
+
+### Step 4: Final Suggestions
+- Using the enriched data, suggest dishes that:
+  * Appear in the menu
+  * Match user preferences
+  * Have compatible ingredients
+- Return final list of suggested dishes
 
 ### Chain of Thought Process:
-1. Let me check if we have user preferences...
-2. Now I'll process the menu...
-3. Time to get ingredient details...
-4. Finally, I can suggest dishes...
+1. "First, I'll store the user input..."
+2. "Now I can process preferences and menu items in parallel..."
+3. "Once both are complete, I'll enrich with ingredients..."
+4. "Finally, I can make personalized suggestions..."
+
+### State Requirements:
+- Required keys before Step 3:
+  * "user_preferences": User dietary restrictions and preferences
+  * "menu_dishes": List of available menu items
+- Required keys for final output:
+  * "enriched_dishes": Detailed dish information with ingredients
 
 Remember:
-- Never skip steps or assume data
-- Wait for each agent to complete before proceeding
-- Use the state object to track progress
-- Only return final suggestions when all steps are complete
+- Do not proceed to Step 3 until both parallel processes complete
+- Always verify state contains required data before proceeding
+- Return error if required state data is missing
 """

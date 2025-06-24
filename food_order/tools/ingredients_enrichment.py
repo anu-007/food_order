@@ -1,5 +1,4 @@
 from google.adk.tools import ToolContext
-from google.adk.sessions import Session
 from litellm import completion
 from ..core.config import MODEL_TEXT
 from ..prompt import dish_enrichment_prompt
@@ -9,8 +8,6 @@ async def ingredients_enrichment(tool_context: ToolContext) -> dict:
     
     Args:
         tool_context (ToolContext): The context object containing state
-        populated_menu (dict): dictonary of dishes and prices
-        user_preference (dict): dictonary of user preferences
         
     Returns:
         dict: A dictionary containing status and details of each dish

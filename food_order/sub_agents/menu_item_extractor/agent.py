@@ -2,7 +2,7 @@ from google.adk.agents import LlmAgent
 from google.adk.models.lite_llm import LiteLlm
 
 from ...tools.image_handler import process_menu_image, extract_dishes
-from ...tools.callbacks.after_tool import after_tool_logger
+from ...tools.callbacks.tool_callback import after_tool_logger
 from ...core.config import MODEL_TEXT
 from ...prompt import menu_extraction_prompt
 
