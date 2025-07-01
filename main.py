@@ -1,10 +1,11 @@
+import random
 import asyncio
 import io
 from PIL import Image
 from pathlib import Path
 from typing import Optional
 from food_order.runner import get_runner
-from food_order.services.sessions import get_session, CustomSessionService
+from food_order.services.sessions import CustomSessionService, get_session
 from food_order.services.artifacts import get_artifacts
 from google.genai import types
 from food_order.core.config import APP_NAME, SESSION_ID, USER_ID
@@ -12,9 +13,13 @@ from food_order.core.config import APP_NAME, SESSION_ID, USER_ID
 async def run_conversation(menu_image_path: Path, preference_text: Optional[str] = None):
     try:
         print("\n=== Starting Food Order Workflow ===")
+        SESSION_ID = str(random.randint(1, 1000))
+
+        # Initialize session service first
+        session_service = CustomSessionService()
         
-        # get session
-        session = await get_session(
+        # Create session using the service
+        await session_service.create_session(
             app_name=APP_NAME,
             user_id=USER_ID,
             session_id=SESSION_ID
@@ -24,7 +29,7 @@ async def run_conversation(menu_image_path: Path, preference_text: Optional[str]
         artifact = get_artifacts()
         
         # get runner
-        runner = get_runner(APP_NAME, session, artifact)
+        runner = get_runner(APP_NAME, session_service, artifact)
 
         # forma initial message
         img = Image.open(menu_image_path)
@@ -36,7 +41,7 @@ async def run_conversation(menu_image_path: Path, preference_text: Optional[str]
         # run convertation
         async for event in runner.run_async(user_id=USER_ID, session_id=SESSION_ID, new_message=content):
             if event.actions and (event.actions.escalate or event.actions.transfer_to_agent):
-                await CustomSessionService.filter_events(session, APP_NAME, USER_ID, SESSION_ID)
+                await CustomSessionService.filter_events(session_service, APP_NAME, USER_ID, SESSION_ID)
             
             if event.is_final_response() and event.content and event.content.parts:
                 final_response_text = event.content.parts[0].text
@@ -51,7 +56,7 @@ async def run_conversation(menu_image_path: Path, preference_text: Optional[str]
 if __name__ == "__main__":
     try:
         PROJECT_ROOT = Path(__file__).parent
-        MENU_PATH = PROJECT_ROOT / "data" / "rest_1_menu.png"
+        MENU_PATH = PROJECT_ROOT / "data" / "rest_2_menu.png"
 
         if not MENU_PATH.exists():
             raise FileNotFoundError(f"Menu image not found at: {MENU_PATH}")
