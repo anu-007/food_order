@@ -2,6 +2,9 @@
 
 This project is an AI-powered food ordering assistant that processes restaurant menu images and user preferences to suggest suitable dishes. It leverages OCR, LLMs, and a modular agent-based workflow.
 
+## Demo
+![food_order](./data/food_menu_gif.gif)
+
 ## Features
 
 - Extracts dish names and prices from menu images using OCR.
@@ -9,6 +12,8 @@ This project is an AI-powered food ordering assistant that processes restaurant 
 - Enriches dish information (ingredients, calories, tags).
 - Suggests dishes based on menu and user preferences.
 - Modular agent/sub-agent architecture for extensibility.
+- Custom session management for user conversations.
+- Callback hooks for agent and tool execution logging.
 
 ## Project Structure
 
@@ -24,7 +29,7 @@ food_order/
 │   ├── sub_agents/
 │   └── tools/
 └── data/
-    └── rest_1_menu.png
+    └── rest_2_menu.png
 ```
 
 ## Setup
@@ -41,11 +46,19 @@ food_order/
    pip install -r requirements.txt
    ```
 
-3. **Configure environment**  
-   - Place your menu image in `data/rest_1_menu.png` or update the path in `main.py`.
+3. **Configure environment**
+   - Create a `.env` file inside the food_order folder same as `.env.example` and put your key openAI key there 
+   - Place your menu image in `data/rest_2_menu.png` or update the path in `main.py`.
    - Set up any required API keys for Google ADK, LiteLLM, or OCR tools as needed.
 
 ## Usage
+
+Run Using adk-web:
+```
+adk web
+```
+
+or
 
 Run the main script:
 
@@ -55,6 +68,12 @@ python main.py
 
 You can modify the user preference text in `main.py` to test different scenarios.
 
+### Notes
+
+- The system uses a custom session service (`CustomSessionService`) for managing user sessions.
+- Agent and tool callbacks are used for logging and can be customized in `food_order/tools/callbacks/`.
+- The menu image and user preferences are both required for the workflow.
+
 ## Customization
 
 - **Agents and Tools:**  
@@ -62,6 +81,9 @@ You can modify the user preference text in `main.py` to test different scenarios
 
 - **Prompts:**  
   Update prompt templates in `food_order/prompt.py` for different extraction or enrichment logic.
+
+- **Callbacks:**  
+  Customize agent and tool callbacks for logging or side effects in `food_order/tools/callbacks/`.
 
 ## License
 

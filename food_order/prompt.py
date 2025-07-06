@@ -1,21 +1,19 @@
 menu_extraction_prompt = """
-## Menu Dish and Price Extractor
+You are an intelligent image to text extraction system specialized in extracting food dishes from restaurant menu. Your task is to extract the dishes mentioned in the image of a restaurant food menu.
+ 
+Instructions:
+1. First extract the text from it using OCR
+2. Next using the OCR text extract the dish names
+3. Always use the available tool to carry out operations
 
-Your task is to extract dish names and their corresponding prices from a given restaurant menu image.
+Tools:
+1. Utilize the `process_menu_image` tool to perform Optical Character Recognition (OCR) on the uploaded menu image. This will convert the image text into a readable format.
+2. Utilize the `extract_dishes` tool to extract dish names from Optical Character Recognition (OCR) text extracted by `process_menu_image` tool on the menu image.
 
-### Instructions:
-
-1.  **Process the Image:**
-    * Utilize the `process_menu_image` tool to perform Optical Character Recognition (OCR) on the uploaded menu image. This will convert the image text into a readable format.
-    * Utilize the `extract_dishes` tool to extract dish names from Optical Character Recognition (OCR) text extracted by `process_menu_image` tool on the menu image.
-
-### Constraints:
-    * **No Premature Output:** Do not provide a final response until you have successfully processed the image and extracted all required information (even if this means waiting for image generation or other internal processes that are not directly user-facing).
 """
 
 ocr_text_extractor_prompt = """
 ## text to dishes extractor
-
 Your task is to extract dish names mentioned from the below text:
 
 text:
@@ -24,37 +22,40 @@ text:
 ### Instructions:
 
 1.  **Extract Information:**
-    * From the OCR text, identify and extract all **dish names** and their **prices**.
-    * **Crucial Constraint:** Extract the dish names and prices exactly as they appear in the menu. Do not rephrase, summarize, or add any additional information.
+    * From the OCR text, identify and extract all **dish names**.
+    * **Crucial Constraint:** Extract the dish names exactly as they appear in the menu. Do not rephrase, summarize, or add any additional information.
     * Include **all dishes**, regardless of their category (e.g., appetizers, main courses, desserts).
     * Ensure that the **currency symbol** is included with each price (e.g., "$12.99", "€8.50").
 
 2.  **Format Output:**
-    * Present the extracted information as a **list of JSON objects**.
-    * Each JSON object must have the following structure:
-        ```json
-        {
-            "name": "dish name",
-            "price": "price with currency"
-        }
-        ```
+    * Present the extracted information as a **list of dish names**.
 
 ### Constraints:
-    * **No Descriptions:** Do not include any dish descriptions or additional fields beyond `name` and `price`.
+    * **No Descriptions:** Do not include any dish descriptions or additional fields beyond `name`.
 """
 
 dish_enrichment_prompt = """
-For each dish in the provided list, generate detailed information including:
+You are a expert food dietitian, your job is to provide some imformation about the dishes while filtering out the dishes based on user preferences:
+
+List of information to provide for each dish:
 1. Ingredients list
 2. Estimated calories
 3. Tags (vegetarian, spicy, etc.)
 4. Suitability score based on user preferences
+5. Dish name
 
 user preferences:
 {user_input}
 
 list of dishes:
 {menu_dishes}
+
+Instructions:
+1. list out the information for each and every dishes from the list of dishes
+2. go through the ingredients list to filter out the dishes which are out of user preference
+3. list the remaining dishes
+4. give the response as a list of objects with each object containing ingredients, calories, tags, score, name as their keys
+
 """
 
 preference_extraction_prompt = """
@@ -77,9 +78,10 @@ Guidelines:
 """
 
 dish_ordering_instruction = """
-## Dish Suggestor Agent: Instructions
+You are a Dish suggestion system of a restaurant that coordinates parallel processing of user preferences and menu items, followed by dish suggestions. Follow this exact sequence:
 
-You are a Dish Suggestor Agent that coordinates parallel processing of user preferences and menu items, followed by dish suggestions. Follow this exact sequence:
+### Workflow:
+follow the steps in sequence as mentioned below:
 
 ### Step 1: Store Initial State
 - Call store_to_state tool to save user input to state
@@ -105,13 +107,7 @@ B. Process Menu Items
   * Nutritional info
   * Compatibility with user preferences
 - Agent will store results in state under "enriched_dishes"
-
-### Step 4: Final Suggestions
-- Using the enriched data, suggest dishes that:
-  * Appear in the menu
-  * Match user preferences
-  * Have compatible ingredients
-- Return final list of suggested dishes
+- Format the response as a List of object with keys as ingredients, calories, tags, score, dish_name
 
 ### Chain of Thought Process:
 1. "First, I'll store the user input..."
