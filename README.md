@@ -3,9 +3,10 @@
 This project is an AI-powered food ordering assistant that processes restaurant menu images and user preferences to suggest suitable dishes. It leverages OCR, LLMs, and a modular agent-based workflow.
 
 ## Demo
-<video width="600" height="400" controls>
-  <source src="./data/food_order_fast.mp4" type="video/mp4">
-</video>
+[https://github.com/anu-007/food_order/blob/main/data/food_order_fast.mp4](https://github.com/user-attachments/assets/c60fffb0-4e36-4656-8585-b9b12c7c6a03)
+
+https://www.youtube.com/watch?v=i-naPJrn21Y
+
 
 ## Features
 
